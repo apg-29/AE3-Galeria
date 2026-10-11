@@ -250,3 +250,33 @@ Antes de activar el sitio, se ha comprobado la sintaxis de Nginx:
 ```bash
 docker exec dpl-lab nginx -t
 ```
+
+## Activación y validación del sitio
+
+Se activa el sitio creando un enlace simbólico desde `sites-available` hacia `sites-enabled`.
+
+```bash
+docker exec dpl-lab ln -s /etc/nginx/sites-available/004-images.alumno.local /etc/nginx/sites-enabled/
+```
+
+Se comprueba la sintaxis de Nginx mediante `nginx -t` y, si la validación es correcta, se recarga el servicio para aplicar los cambios.
+
+Finalmente, se verifica la configuración cargada mediante `nginx -T`:
+
+```bash
+docker exec dpl-lab nginx -T | grep -E "server_name images|image_filter|load_module" | head
+```
+
+Salida:
+
+```text
+load_module modules/ngx_http_image_filter_module.so;
+    server_name images.alumno.local;
+        # Sin esto, image_filter convierte la pagina de error del 401 en un
+        image_filter resize $img_size $img_size;
+        image_filter_sharpen $img_sharpen;
+        image_filter_jpeg_quality $img_quality;
+        image_filter_buffer 5M;
+    # Respuesta de autenticacion sin image_filter de por medio
+    server_name images.alumno.local;
+```
