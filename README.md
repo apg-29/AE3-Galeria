@@ -99,3 +99,91 @@ docker exec dpl-lab cp /home/alumno/dpl/ae3/web/app.js /var/www/images.alumno.lo
 docker exec dpl-lab cp /home/alumno/dpl/ae3/web/estilos.css /var/www/images.alumno.local/
 docker exec dpl-lab chmod -R a+rX /var/www/images.alumno.local
 ```
+
+## Generar el certificado HTTPS
+
+Para proteger la galería se utiliza un certificado autofirmado generado
+con OpenSSL dentro del contenedor Docker `dpl-lab`.
+
+El certificado se utiliza para el sitio `images.alumno.local` y contiene
+también el nombre alternativo `www.images.alumno.local` mediante la
+extensión SAN (Subject Alternative Name).
+
+### Generación del certificado
+
+Primero se crea el directorio destinado a los certificados:
+
+```bash
+docker exec dpl-lab mkdir -p /etc/ssl/dpl
+```
+
+A continuación, se genera el certificado autofirmado y su clave privada:
+
+```bash
+docker exec dpl-lab openssl req -x509 -nodes -newkey rsa:2048 -days 365 -keyout /etc/ssl/dpl/images.alumno.local.key -out /etc/ssl/dpl/images.alumno.local.crt -subj "/CN=images.alumno.local" -addext "subjectAltName=DNS:images.alumno.local,DNS:www.images.alumno.local"
+```
+
+La clave privada se protege con permisos restrictivos:
+
+```bash
+docker exec dpl-lab chmod 400 /etc/ssl/dpl/images.alumno.local.key
+```
+
+### Verificación
+
+Se comprueban el sujeto, la validez y los nombres DNS del certificado:
+
+```bash
+docker exec dpl-lab openssl x509 -in /etc/ssl/dpl/images.alumno.local.crt -noout -subject -dates -ext subjectAltName
+```
+
+### Certificado público y clave privada
+
+El certificado público se copia al directorio `certs/` del proyecto:
+
+```bash
+docker cp dpl-lab:/etc/ssl/dpl/images.alumno.local.crt ~/dpl/ae3/certs/images.alumno.local.crt
+```
+
+El archivo `certs/LEEME.md` contiene las instrucciones para generar
+el certificado.
+
+La clave privada permanece en `/etc/ssl/dpl/` dentro del contenedor
+y no se incluye en el repositorio Git.
+
+Al ser autofirmado, el navegador puede mostrar una advertencia de
+confianza. Esto es esperado en el laboratorio. En producción se
+utilizaría un certificado emitido por una autoridad de certificación
+de confianza.
+
+## Configurar la autenticación básica
+
+La galería utiliza la autenticación HTTP Basic para proteger el acceso a las imágenes. Las credenciales son el usuario `alumno` y la contraseña `1234qwerty`.
+
+### Crear el fichero de usuarios
+
+Se genera el hash de la contraseña con OpenSSL y se guarda fuera del
+DocumentRoot, en `/etc/nginx/htpasswd-images`:
+
+```bash
+docker exec dpl-lab bash -c 'echo "alumno:$(openssl passwd -apr1 1234qwerty)" > /etc/nginx/htpasswd-images'
+```
+
+### Proteger el fichero
+
+Se asignan el propietario y el grupo necesarios para que Nginx pueda
+leer el fichero:
+
+```bash
+docker exec dpl-lab chown root:www-data /etc/nginx/htpasswd-images docker exec dpl-lab chmod 640 /etc/nginx/htpasswd-images
+```
+
+### Comprobación
+
+```bash
+docker exec dpl-lab ls -l /etc/nginx/htpasswd-images
+docker exec dpl-lab cat /etc/nginx/htpasswd-images
+```
+
+El fichero contiene el usuario y el hash de su contraseña, no la
+contraseña en texto plano.
