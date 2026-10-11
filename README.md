@@ -454,3 +454,9 @@ docker exec dpl-lab curl -k -I https://localhost/img/image01.jpg -H "Host: image
 
 docker exec dpl-lab identify /tmp/mini.jpg
 ```
+
+## Repositorio remoto
+
+El proyecto AE3 está alojado en GitHub. El repositorio contiene la configuración de Nginx, la aplicación web, el certificado público, las instrucciones de generación del certificado, las comprobaciones y la documentación de la práctica.
+
+Repositorio: [AE3 en GitHub](https://github.com/apg-29/AE3-Galeria)
