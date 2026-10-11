@@ -280,3 +280,96 @@ load_module modules/ngx_http_image_filter_module.so;
     # Respuesta de autenticacion sin image_filter de por medio
     server_name images.alumno.local;
 ```
+
+## Pruebas de funcionamiento del sitio
+
+Las pruebas se realizaron desde el contenedor `dpl-lab`, utilizando `curl` para comprobar las respuestas HTTP y HTTPS.
+
+### Acceso a la galería
+
+Se comprobó el acceso HTTPS a la página principal:
+
+```bash
+docker exec dpl-lab curl -k -I https://localhost/ -H "Host: images.alumno.local"
+```
+
+Resultado: `200 OK`.
+
+### Autenticación básica
+
+Se solicitó una imagen sin proporcionar credenciales:
+
+```bash
+docker exec dpl-lab curl -k -I "https://localhost/img/image01.jpg" -H "Host: images.alumno.local"
+```
+
+Resultado: `401 Unauthorized`.
+
+### Procesamiento de imágenes
+
+Se descargó una imagen con autenticación y un tamaño solicitado de 150 píxeles:
+
+```bash
+docker exec dpl-lab curl -k -u alumno:1234qwerty -o /tmp/mini.jpg \
+    "https://localhost/img/image01.jpg?size=150&q=60&sharpen=30" -H "Host: images.alumno.local"
+```
+
+Se verificaron las dimensiones con ImageMagick:
+
+```bash
+docker exec dpl-lab identify /tmp/mini.jpg
+```
+
+Resultado: imagen JPEG de 150x150 píxeles.
+
+```text
+/tmp/mini.jpg JPEG 150x150 150x150+0+0 8-bit sRGB 1938B 0.000u 0:00.000
+```
+
+También se solicitó un tamaño de 600x600. Como la imagen original
+mide 400x400 píxeles, el resultado mantuvo las dimensiones originales.
+
+### Redirecciones HTTP a HTTPS
+
+Se comprobó la redirección del dominio principal:
+
+```bash
+docker exec dpl-lab curl -I http://localhost/ -H "Host: images.alumno.local"
+```
+
+Resultado: 
+
+`301 Moved Permanently` con destino `https://images.alumno.local/`.
+
+También se comprobó la redirección del subdominio `www`:
+
+```bash
+docker exec dpl-lab curl -I http://localhost/ -H "Host: www.images.alumno.local"
+```
+
+Resultado:
+
+```text
+HTTP/1.1 301 Moved Permanently
+Server: nginx/1.24.0 (Ubuntu)
+Date: Sun, 11 Oct 2026 16:49:40 GMT
+Content-Type: text/html
+Content-Length: 178
+Connection: keep-alive
+Location: https://images.alumno.local/
+```
+
+### Certificado HTTPS
+
+Se examinó el certificado presentado por el servidor:
+
+```bash
+docker exec dpl-lab openssl s_client -connect localhost:443 -servername images.alumno.local 2>&1 | grep -E "subject=|issuer="
+```
+
+Salida:
+
+```text
+subject=CN = images.alumno.local
+issuer=CN = images.alumno.local
+```
