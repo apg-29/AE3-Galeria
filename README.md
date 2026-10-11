@@ -46,3 +46,28 @@ Comprobar que Nginx acepta su configuración:
 ```bash
 docker exec dpl-lab nginx -t
 ```
+
+### Confirmar que Nginx reconoce el módulo
+
+```bash
+docker exec dpl-lab nginx -V 2>&1 | grep image_filter
+docker exec dpl-lab nginx -T 2>&1 | grep -E "load_module|image_filter"
+```
+
+## Generación de imágenes de prueba
+
+Las 20 imágenes originales se generan dentro del contenedor `dpl-lab`
+con ImageMagick. Todas tienen dimensiones de 400x400 píxeles y nombres
+desde `image01.jpg` hasta `image20.jpg`.
+
+Comando utilizado:
+
+```bash
+docker exec dpl-lab bash -c 'for i in $(seq -w 1 20); do convert -size 400x400 gradient:"#2f6fed"-"#8bc34a" -fill white -pointsize 64 -gravity center -annotate 0 "IMG $i" "/var/www/images.alumno.local/img/image$i.jpg" done'
+```
+
+Comprueba la primera imagen:
+
+```bash
+docker exec dpl-lab identify /var/www/images.alumno.local/img/image01.jpg
+```
