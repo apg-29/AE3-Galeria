@@ -187,3 +187,66 @@ docker exec dpl-lab cat /etc/nginx/htpasswd-images
 
 El fichero contiene el usuario y el hash de su contraseña, no la
 contraseña en texto plano.
+
+## Configuración del sitio en Nginx
+
+Se ha creado el archivo de configuración `/etc/nginx/sites-available/004-images.alumno.local` dentro del contenedor `dpl-lab`.
+
+### Bloques map
+
+Se han definido tres directivas `map` para controlar los parámetros que recibe la aplicación mediante la URL:
+
+- `$img_size`: permite los tamaños 150, 300 y 600 píxeles. El valor predeterminado es 300.
+- `$img_quality`: permite las calidades JPEG 60, 80 y 100. El valor predeterminado es 80.
+- `$img_sharpen`: permite los niveles de enfoque 0, 30, 60 y 100. El valor predeterminado es 0.
+
+Estas listas blancas evitan que se utilicen valores arbitrarios
+en los parámetros de procesamiento de imágenes.
+
+Las directivas `map` se declaran en el contexto `http`, fuera de los bloques `server`, porque Nginx no permite definirlas dentro de un servidor o una ubicación.
+
+### Servidor HTTPS
+
+El bloque principal configura el sitio `images.alumno.local`:
+
+- Escucha las conexiones HTTPS por el puerto 443.
+- Utiliza `/var/www/images.alumno.local` como DocumentRoot.
+- Define `index.html` como página de inicio.
+- Utiliza el certificado y la clave privada configurados para el sitio.
+
+La ubicación `/` sirve los archivos de la aplicación y utiliza `try_files` para comprobar que los recursos solicitados existen.
+
+### Procesamiento y autenticación de imágenes
+
+La ubicación `/img/` contiene las directivas de procesamiento del módulo `image_filter`:
+
+- `image_filter resize`: redimensiona las imágenes utilizando el tamaño permitido.
+- `image_filter_sharpen`: aplica el nivel de enfoque solicitado.
+- `image_filter_jpeg_quality`: establece la calidad JPEG.
+- `image_filter_buffer 5M`: establece un búfer máximo de 5 MB para leer las imágenes.
+
+Esta ubicación también utiliza autenticación básica mediante `auth_basic` y el archivo de usuarios `/etc/nginx/htpasswd-images`.
+
+La directiva `error_page 401 @sin_autorizacion` permite gestionar la respuesta de autenticación sin que el filtro de imágenes transforme la respuesta de error. La ubicación con nombre `@sin_autorizacion` devuelve el código HTTP 401.
+
+### Redirecciones
+
+Se han definido dos bloques adicionales:
+
+- Las peticiones HTTP a `images.alumno.local` se redirigen a HTTPS.
+- Las peticiones HTTP a `www.images.alumno.local` se redirigen al dominio `https://images.alumno.local`.
+
+### Registros
+
+Se han configurado archivos específicos para registrar la actividad del sitio:
+
+- `/var/log/nginx/images-alumno.access.log`
+- `/var/log/nginx/images-alumno.error.log`
+
+### Comprobación de la configuración
+
+Antes de activar el sitio, se ha comprobado la sintaxis de Nginx:
+
+```bash
+docker exec dpl-lab nginx -t
+```
