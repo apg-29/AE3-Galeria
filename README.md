@@ -3,7 +3,7 @@
 ## Objetivo
 
 Desplegar una galería web en images.alumno.local utilizando Nginx,
-el módulo image_filter, HTTPS con certificado autofirmado,
+el módulo `image_filter`, HTTPS con certificado autofirmado,
 autenticación básica y análisis de logs con GoAccess.
 
 ## Estado del proyecto
@@ -63,7 +63,7 @@ desde `image01.jpg` hasta `image20.jpg`.
 Comando utilizado:
 
 ```bash
-docker exec dpl-lab bash -c 'for i in $(seq -w 1 20); do convert -size 400x400 gradient:"#2f6fed"-"#8bc34a" -fill white -pointsize 64 -gravity center -annotate 0 "IMG $i" "/var/www/images.alumno.local/img/image$i.jpg" done'
+docker exec dpl-lab bash -c 'for i in $(seq -w 1 20); do convert -size 400x400 gradient:"#2f6fed"-"#8bc34a" -fill white -pointsize 64 -gravity center -annotate 0 "IMG $i" "/var/www/images.alumno.local/img/image$i.jpg"; done'
 ```
 
 Comprueba la primera imagen:
@@ -93,9 +93,9 @@ La aplicación distribuye el trabajo entre el servidor y el cliente:
 
 Los archivos de la aplicación deben estar disponibles en el directorio servido por Nginx:
 
-```bas
-docker exec dpl-lab cp /home/alumno/dpl/ae3/web/index.html /var/www/images.alumno.local/ 
-docker exec dpl-lab cp /home/alumno/dpl/ae3/web/app.js /var/www/images.alumno.local/ 
-docker exec dpl-lab cp /home/alumno/dpl/ae3/web/estilos.css /var/www/images.alumno.local/ 
+```bash
+docker exec dpl-lab cp /home/alumno/dpl/ae3/web/index.html /var/www/images.alumno.local/
+docker exec dpl-lab cp /home/alumno/dpl/ae3/web/app.js /var/www/images.alumno.local/
+docker exec dpl-lab cp /home/alumno/dpl/ae3/web/estilos.css /var/www/images.alumno.local/
 docker exec dpl-lab chmod -R a+rX /var/www/images.alumno.local
 ```
