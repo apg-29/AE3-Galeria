@@ -71,3 +71,31 @@ Comprueba la primera imagen:
 ```bash
 docker exec dpl-lab identify /var/www/images.alumno.local/img/image01.jpg
 ```
+
+## Crear la aplicación de la galería
+
+La aplicación web está formada por tres archivos:
+
+- `web/index.html`: contiene el formulario con los cinco controles y el contenedor de la galería.
+- `web/app.js`: crea las 20 imágenes y actualiza sus URL cuando el usuario pulsa el botón «Generar».
+- `web/estilos.css`: define la presentación de la galería.
+
+El formulario permite modificar el tamaño de las imágenes, el ancho del borde, su color, el enfoque y el desenfoque.
+
+### Procesamiento de imágenes
+
+La aplicación distribuye el trabajo entre el servidor y el cliente:
+
+- **Servidor (Nginx):** procesa el redimensionado y el enfoque mediante el módulo `image_filter`. Los valores se envían en los parámetros `size` y `sharpen` de la URL.
+- **Cliente (navegador):** aplica el ancho y el color del borde mediante CSS, así como el desenfoque con `filter: blur()`.
+
+### Copiar la aplicación al DocumentRoot
+
+Los archivos de la aplicación deben estar disponibles en el directorio servido por Nginx:
+
+```bas
+docker exec dpl-lab cp /home/alumno/dpl/ae3/web/index.html /var/www/images.alumno.local/ 
+docker exec dpl-lab cp /home/alumno/dpl/ae3/web/app.js /var/www/images.alumno.local/ 
+docker exec dpl-lab cp /home/alumno/dpl/ae3/web/estilos.css /var/www/images.alumno.local/ 
+docker exec dpl-lab chmod -R a+rX /var/www/images.alumno.local
+```
