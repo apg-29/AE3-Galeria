@@ -1,0 +1,133 @@
+===== ESTRUCTURA DEL PROYECTO =====
+.:
+certs
+comprobaciones.txt
+nginx
+README.md
+web
+
+./certs:
+images.alumno.local.crt
+LEEME.md
+
+./nginx:
+images.alumno.local.conf
+
+./web:
+app.js
+estilos.css
+index.html
+===== HISTORIAL DE COMMITS =====
+7743cca Documentar modulos, HTTPS, autenticacion y analisis de logs
+2aa9e92 Documentar las pruebas de funcionamiento de la galeria
+6bf841f Activar y validar el sitio de la galeria
+7801d12 Documentar la configuracion del sitio en Nginx
+b90ce18 Preparar la autenticacion basica de la galeria
+7bf9d87 Guardar el certificado publico y sus instrucciones
+8f81224 Crear la aplicacion de la galeria
+a1c8df2 Preparar las imagenes de prueba
+ff85f69 Documentar la instalacion de image_filter
+f5f674a Crear estructura inicial de la AE3
+===== AUTORIA DE LOS COMMITS =====
+Angel Perez Garcia <angelperzgrcia@gmail.com>
+===== BUSQUEDA DE CLAVES Y CREDENCIALES =====
+./README.md:166:DocumentRoot, en `/etc/nginx/htpasswd-images`:
+./README.md:169:docker exec dpl-lab bash -c 'echo "alumno:$(openssl passwd -apr1 1234qwerty)" > /etc/nginx/htpasswd-images'
+./README.md:178:docker exec dpl-lab chown root:www-data /etc/nginx/htpasswd-images
+./README.md:179:docker exec dpl-lab chmod 640 /etc/nginx/htpasswd-images
+./README.md:185:docker exec dpl-lab ls -l /etc/nginx/htpasswd-images
+./README.md:186:docker exec dpl-lab cat /etc/nginx/htpasswd-images
+./README.md:229:Esta ubicación también utiliza autenticación básica mediante `auth_basic` y el archivo de usuarios `/etc/nginx/htpasswd-images`.
+./nginx/images.alumno.local.conf:43:        auth_basic_user_file /etc/nginx/htpasswd-images;
+grep: ./comprobaciones.txt: el fichero de entrada también es el de salida
+sin coincidencias
+===== VALIDACION DE NGINX =====
+nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
+nginx: configuration file /etc/nginx/nginx.conf test is successful
+===== CONFIGURACION ACTIVA =====
+	# server_names_hash_bucket_size 64;
+	# server_name_in_redirect off;
+load_module modules/ngx_http_image_filter_module.so;
+    server_name www.alumno.local;
+    server_name app.alumno.local;
+    server_name www.alumno.local;
+    server_name images.alumno.local;
+        auth_basic "Galeria de imagenes";
+        auth_basic_user_file /etc/nginx/htpasswd-images;
+        # Sin esto, image_filter convierte la pagina de error del 401 en un
+        image_filter resize $img_size $img_size;
+        image_filter_sharpen $img_sharpen;
+        image_filter_jpeg_quality $img_quality;
+        image_filter_buffer 5M;
+    # Respuesta de autenticacion sin image_filter de por medio
+    server_name images.alumno.local;
+    server_name www.images.alumno.local;
+    server_name _;
+===== VERSION DE NGINX =====
+configure arguments: --with-cc-opt='-g -O2 -fno-omit-frame-pointer -mno-omit-leaf-frame-pointer -ffile-prefix-map=/build/nginx-PgwIQM/nginx-1.24.0=. -flto=auto -ffat-lto-objects -fstack-protector-strong -fstack-clash-protection -Wformat -Werror=format-security -fcf-protection -fdebug-prefix-map=/build/nginx-PgwIQM/nginx-1.24.0=/usr/src/nginx-1.24.0-2ubuntu7.18 -fPIC -Wdate-time -D_FORTIFY_SOURCE=3' --with-ld-opt='-Wl,-Bsymbolic-functions -flto=auto -ffat-lto-objects -Wl,-z,relro -Wl,-z,now -fPIC' --prefix=/usr/share/nginx --conf-path=/etc/nginx/nginx.conf --http-log-path=/var/log/nginx/access.log --error-log-path=stderr --lock-path=/var/lock/nginx.lock --pid-path=/run/nginx.pid --modules-path=/usr/lib/nginx/modules --http-client-body-temp-path=/var/lib/nginx/body --http-fastcgi-temp-path=/var/lib/nginx/fastcgi --http-proxy-temp-path=/var/lib/nginx/proxy --http-scgi-temp-path=/var/lib/nginx/scgi --http-uwsgi-temp-path=/var/lib/nginx/uwsgi --with-compat --with-debug --with-pcre-jit --with-http_ssl_module --with-http_stub_status_module --with-http_realip_module --with-http_auth_request_module --with-http_v2_module --with-http_dav_module --with-http_slice_module --with-threads --with-http_addition_module --with-http_flv_module --with-http_gunzip_module --with-http_gzip_static_module --with-http_mp4_module --with-http_random_index_module --with-http_secure_link_module --with-http_sub_module --with-mail_ssl_module --with-stream_ssl_module --with-stream_ssl_preread_module --with-stream_realip_module --with-http_geoip_module=dynamic --with-http_image_filter_module=dynamic --with-http_perl_module=dynamic --with-http_xslt_module=dynamic --with-mail=dynamic --with-stream=dynamic --with-stream_geoip_module=dynamic
+===== PAGINA PRINCIPAL =====
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0  0  1350    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+HTTP/1.1 200 OK
+Server: nginx/1.24.0 (Ubuntu)
+Date: Sun, 11 Oct 2026 17:50:10 GMT
+Content-Type: text/html
+Content-Length: 1350
+Last-Modified: Sun, 11 Oct 2026 13:52:18 GMT
+Connection: keep-alive
+ETag: "6acb9492-546"
+Accept-Ranges: bytes
+
+===== IMAGEN SIN AUTENTICACION =====
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0  0   188    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+HTTP/1.1 401 Unauthorized
+Server: nginx/1.24.0 (Ubuntu)
+Date: Sun, 11 Oct 2026 17:50:10 GMT
+Content-Type: text/html
+Content-Length: 188
+Connection: keep-alive
+WWW-Authenticate: Basic realm="Galeria de imagenes"
+
+===== IMAGEN CON AUTENTICACION =====
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100  2451  100  2451    0     0   369k      0 --:--:-- --:--:-- --:--:--  398k
+===== DIMENSIONES DE LA MINIATURA =====
+/tmp/ae3.jpg JPEG 150x150 150x150+0+0 8-bit sRGB 2451B 0.000u 0:00.000
+===== REDIRECCION WWW =====
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0  0   178    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+HTTP/1.1 301 Moved Permanently
+Server: nginx/1.24.0 (Ubuntu)
+Date: Sun, 11 Oct 2026 17:50:11 GMT
+Content-Type: text/html
+Content-Length: 178
+Connection: keep-alive
+Location: https://images.alumno.local/
+
+===== GENERACION DEL INFORME GOACCESS =====
+ [PARSING /var/log/nginx/images-alumno.access.log] {0} @ {0/s}
+Cleaning up resources...
+===== CONTENIDO DEL INFORME =====
+{"general": {"start_date": "11/Oct/2026","end_date": "11/Oct/2026","date_time": "2026-10-11 17:50:11 +0000","total_requests": 7,"valid_requests": 7,"failed_requests": 0,"generation_time": 1,"unique_visitors": 1,"unique_files": 4,"excluded_hits": 0,"unique_referrers": 0,"unique_not_found": 0,"unique_static_files": 1,"log_size": 697,"bandwidth": 17068,"log_path": ["\/var\/log\/nginx\/images-alumno.a
+===== ULTIMAS PETICIONES DEL LOG =====
+::1 - - [11/Oct/2026:16:46:54 +0000] "HEAD / HTTP/1.1" 200 0 "-" "curl/8.5.0"
+::1 - - [11/Oct/2026:16:47:11 +0000] "HEAD /img/image01.jpg HTTP/1.1" 401 0 "-" "curl/8.5.0"
+::1 - alumno [11/Oct/2026:16:48:07 +0000] "GET /img/image01.jpg?size=600 HTTP/1.1" 200 12679 "-" "curl/8.5.0"
+::1 - alumno [11/Oct/2026:16:48:57 +0000] "GET /img/image01.jpg?size=150&q=60&sharpen=30 HTTP/1.1" 200 1938 "-" "curl/8.5.0"
+::1 - - [11/Oct/2026:17:50:10 +0000] "HEAD / HTTP/1.1" 200 0 "-" "curl/8.5.0"
+::1 - - [11/Oct/2026:17:50:10 +0000] "HEAD /img/image01.jpg HTTP/1.1" 401 0 "-" "curl/8.5.0"
+::1 - alumno [11/Oct/2026:17:50:10 +0000] "GET /img/image01.jpg?size=150&sharpen=30 HTTP/1.1" 200 2451 "-" "curl/8.5.0"
+
+===== APLICACION DE LA GALERIA =====
+const TOTAL = 20;
+function urlImagen(numero, size, sharpen) {
+  for (let i = 1; i <= TOTAL; i++) {
+    img.src = urlImagen(indice + 1, size, sharpen);
+
+===== TAMANO PREDETERMINADO =====
+/tmp/ae3-default.jpg JPEG 300x300 300x300+0+0 8-bit sRGB 5123B 0.000u 0:00.000

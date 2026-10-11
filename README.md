@@ -2,15 +2,7 @@
 
 ## Objetivo
 
-Desplegar una galería web en images.alumno.local utilizando Nginx,
-el módulo `image_filter`, HTTPS con certificado autofirmado,
-autenticación básica y análisis de logs con GoAccess.
-
-## Estado del proyecto
-
-Proyecto en desarrollo. En los siguientes apartados se documentarán
-la instalación, la configuración, las comprobaciones y los problemas
-encontrados durante la práctica.
+Desplegar una galería web en images.alumno.local utilizando Nginx, el módulo `image_filter`, HTTPS con certificado autofirmado, autenticación básica y análisis de logs con GoAccess.
 
 ## Instalación y activación del módulo `image_filter`
 
@@ -145,28 +137,22 @@ El certificado público se copia al directorio `certs/` del proyecto:
 docker cp dpl-lab:/etc/ssl/dpl/images.alumno.local.crt ~/dpl/ae3/certs/images.alumno.local.crt
 ```
 
-El archivo `certs/LEEME.md` contiene las instrucciones para generar
-el certificado.
+El archivo `certs/LEEME.md` contiene las instrucciones para generar el certificado.
 
-La clave privada permanece en `/etc/ssl/dpl/` dentro del contenedor
-y no se incluye en el repositorio Git.
+La clave privada permanece en `/etc/ssl/dpl/` dentro del contenedor y no se incluye en el repositorio Git.
 
-Al ser autofirmado, el navegador puede mostrar una advertencia de
-confianza. Esto es esperado en el laboratorio. En producción se
-utilizaría un certificado emitido por una autoridad de certificación
-de confianza.
+Al ser autofirmado, el navegador puede mostrar una advertencia de confianza.
 
 ## Configurar la autenticación básica
 
-La galería utiliza la autenticación HTTP Basic para proteger el acceso a las imágenes. Las credenciales son el usuario `alumno` y la contraseña `1234qwerty`.
+La galería utiliza la autenticación HTTP Basic para proteger el acceso a las imágenes. Las credenciales son el usuario y la contraseña.
 
 ### Crear el fichero de usuarios
 
-Se genera el hash de la contraseña con OpenSSL y se guarda fuera del
-DocumentRoot, en `/etc/nginx/htpasswd-images`:
+Se genera el hash de la contraseña con OpenSSL y se guarda fuera del DocumentRoot, en `/etc/nginx/htpasswd-images`:
 
 ```bash
-docker exec dpl-lab bash -c 'echo "alumno:$(openssl passwd -apr1 1234qwerty)" > /etc/nginx/htpasswd-images'
+docker exec dpl-lab bash -c 'echo "alumno:$(openssl passwd -apr1 CONTRASEÑA)" > /etc/nginx/htpasswd-images'
 ```
 
 ### Proteger el fichero
@@ -175,7 +161,8 @@ Se asignan el propietario y el grupo necesarios para que Nginx pueda
 leer el fichero:
 
 ```bash
-docker exec dpl-lab chown root:www-data /etc/nginx/htpasswd-images docker exec dpl-lab chmod 640 /etc/nginx/htpasswd-images
+docker exec dpl-lab chown root:www-data /etc/nginx/htpasswd-images
+docker exec dpl-lab chmod 640 /etc/nginx/htpasswd-images
 ```
 
 ### Comprobación
@@ -279,6 +266,27 @@ load_module modules/ngx_http_image_filter_module.so;
         image_filter_buffer 5M;
     # Respuesta de autenticacion sin image_filter de por medio
     server_name images.alumno.local;
+```
+
+## Diagrama de funcionamiento
+
+El siguiente diagrama muestra el funcionamiento de la galería, desde el navegador hasta el servidor Nginx, incluyendo el procesamiento de imágenes, la autenticación y el registro de actividad.
+
+```mermaid
+flowchart TD
+    A["Navegador del usuario"] --> B["Galería web<br/>index.html + app.js"]
+    B --> C["Actualización del src de las 20 imágenes"]
+    C --> D["HTTPS + autenticación básica"]
+    D --> E["Nginx<br/>images.alumno.local"]
+    E --> F{"¿Ruta /img autorizada?"}
+    F -- "No: HTTP 401" --> G["Solicitud de autenticación"]
+    F -- "Sí: HTTP 200" --> H["image_filter<br/>resize + sharpen"]
+    H --> I["Imagen original<br/>image01.jpg ... image20.jpg"]
+    I --> J["Respuesta procesada al navegador"]
+    J --> K["Aplicación de borde, color y desenfoque<br/>mediante CSS"]
+    E --> L["images-alumno.access.log"]
+    L --> M["GoAccess"]
+    M --> N["Informe JSON / HTML"]
 ```
 
 ## Pruebas de funcionamiento del sitio
