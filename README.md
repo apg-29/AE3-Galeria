@@ -310,7 +310,7 @@ Resultado: `401 Unauthorized`.
 Se descargó una imagen con autenticación y un tamaño solicitado de 150 píxeles:
 
 ```bash
-docker exec dpl-lab curl -k -u alumno:1234qwerty -o /tmp/mini.jpg \
+docker exec dpl-lab curl -k -u USUARIO:CONTRASENA -o /tmp/mini.jpg \
     "https://localhost/img/image01.jpg?size=150&q=60&sharpen=30" -H "Host: images.alumno.local"
 ```
 
@@ -372,4 +372,77 @@ Salida:
 ```text
 subject=CN = images.alumno.local
 issuer=CN = images.alumno.local
+```
+
+## Análisis de registros con GoAccess
+
+### Instalación
+
+Se ha instalado GoAccess en el contenedor Docker `dpl-lab` para analizar las peticiones recibidas por el servidor web Nginx.
+
+```bash
+docker exec dpl-lab apt-get update
+docker exec dpl-lab apt-get install -y goaccess
+```
+
+Se puede comprobar la instalación mediante:
+
+```bash
+docker exec dpl-lab goaccess --version
+```
+
+### Generación de informes
+
+Se utiliza el registro de acceso específico del sitio `images.alumno.local` y se generan dos informes con el formato de registro `COMBINED`:
+
+```bash
+docker exec dpl-lab goaccess /var/log/nginx/images-alumno.access.log --log-format=COMBINED -o /home/alumno/dpl/informe-images.json
+
+docker exec dpl-lab goaccess /var/log/nginx/images-alumno.access.log --log-format=COMBINED -o /home/alumno/dpl/informe-images.html
+```
+
+Los informes se guardan en `/home/alumno/dpl/` dentro del contenedor. Este directorio está compartido con `/home/aperez/dpl/` en la máquina virtual, por lo que los archivos también están disponibles en `~/dpl/`.
+
+### Comprobación de los informes
+
+Se comprueba el registro de acceso y la generación de los informes:
+
+```bash
+docker exec dpl-lab tail -n 10 /var/log/nginx/images-alumno.access.log
+```
+
+GoAccess permite analizar las peticiones recibidas, las rutas solicitadas y los códigos de respuesta HTTP registrados.
+
+Durante las pruebas del sitio se han generado peticiones con respuestas satisfactorias (200), redirecciones (301) y solicitudes sin autenticar (401).
+
+## Copia de la configuración de Nginx al repositorio
+
+Para conservar una copia de la configuración del sitio y facilitar su revisión, se ha copiado el archivo de configuración desde el contenedor Docker al repositorio de la práctica.
+
+Comando utilizado:
+
+```bash
+docker cp dpl-lab:/etc/nginx/sites-available/004-images.alumno.local ~/dpl/ae3/nginx/images.alumno.local.conf
+```
+
+La configuración se guarda en `nginx/images.alumno.local.conf`
+
+Este archivo contiene la configuración del sitio virtual, incluidos los bloques de servidor, las redirecciones HTTP a HTTPS, las reglas de procesamiento de imágenes mediante `image_filter` y la autenticación básica aplicada al directorio `/img/`.
+
+La copia versionada permite consultar la configuración utilizada sin tener que acceder directamente al contenedor.
+
+## Comprobaciones finales
+
+Se utilizan los siguientes comandos para verificar el funcionamiento de Nginx y del sitio:
+
+```bash
+docker exec dpl-lab nginx -t
+
+docker exec dpl-lab nginx -T | grep -E 'loadmodule|imagefilter|auth_basic'
+
+docker exec dpl-lab curl -k -I https://localhost/ -H "Host: images.alumno.local"
+
+docker exec dpl-lab curl -k -I https://localhost/img/image01.jpg -H "Host: images.alumno.local"
+
+docker exec dpl-lab identify /tmp/mini.jpg
 ```
